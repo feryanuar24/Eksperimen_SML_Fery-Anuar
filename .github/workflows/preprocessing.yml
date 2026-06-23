@@ -2,8 +2,8 @@ name: Auto Preprocessing
 
 on:
   push:
-    paths:
-      - "hotel_bookings_raw.csv"
+    branches:
+      - main
 
 jobs:
   preprocess:
