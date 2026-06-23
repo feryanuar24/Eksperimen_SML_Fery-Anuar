@@ -1,0 +1,22 @@
+name: Auto Preprocessing
+
+on:
+  push:
+    paths:
+      - "hotel_bookings_raw.csv"
+
+jobs:
+  preprocess:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+
+        with:
+          python-version: "3.12"
+
+      - run: pip install pandas scikit-learn
+
+      - run: python preprocessing/automate_Fery-Anuar.py
