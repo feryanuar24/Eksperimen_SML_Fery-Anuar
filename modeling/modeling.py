@@ -1,11 +1,13 @@
+import matplotlib.pyplot as plt
 import mlflow
-import optuna
 import pandas as pd
 
-from sklearn.model_selection import (
-    train_test_split,
-    cross_val_score
+from sklearn.metrics import (
+    accuracy_score,
+    confusion_matrix,
+    classification_report
 )
+from sklearn.model_selection import train_test_split
 from xgboost import XGBClassifier
 
 # ==========================================
@@ -28,11 +30,12 @@ train_test_split(
     X,
     y,
     test_size=0.2,
-    random_state=42
+    random_state=42,
+    stratify=y
 )
 
 # ==========================================
-# MLFLOW (MAIN)
+# MLFLOW (AUTO LOGGING)
 # ==========================================
 
 mlflow.set_tracking_uri(
@@ -40,82 +43,10 @@ mlflow.set_tracking_uri(
 )
 
 mlflow.set_experiment(
-    "Hotel Booking Auto Logging"
+    "Hotel Booking Auto Logging Without Hyperparameter Tuning"
 )
 
 mlflow.autolog()
-
-# ==========================================
-# OPTUNA OBJECTIVE  
-# ==========================================
-
-def objective(trial):
-
-    params = {
-
-        "n_estimators": trial.suggest_int(
-            "n_estimators",
-            100,
-            300
-        ),
-
-        "max_depth": trial.suggest_int(
-            "max_depth",
-            3,
-            10
-        ),
-
-        "learning_rate": trial.suggest_float(
-            "learning_rate",
-            0.01,
-            0.3
-        ),
-
-        "subsample": trial.suggest_float(
-            "subsample",
-            0.6,
-            1.0
-        ),
-
-        "colsample_bytree": trial.suggest_float(
-            "colsample_bytree",
-            0.6,
-            1.0
-        ),
-
-        "random_state": 42,
-
-        "eval_metric": "logloss"
-    }
-
-    model = XGBClassifier(
-        **params
-    )
-
-    score = cross_val_score(
-        model,
-        X_train,
-        y_train,
-        cv=3,
-        scoring="accuracy"
-    ).mean()
-
-    return score
-
-# ==========================================
-# OPTUNA
-# ==========================================
-
-study = optuna.create_study(
-    direction="maximize"
-)
-
-study.optimize(
-    objective,
-    n_trials=10
-)
-
-best_params = study.best_params
 
 # ==========================================
 # TRAIN FINAL MODEL
@@ -123,8 +54,22 @@ best_params = study.best_params
 
 with mlflow.start_run():
 
+    # ==========================================
+    # PARAMETER
+    # ==========================================
+
+    n_estimators = 250
+    max_depth = 8
+    learning_rate = 0.1
+
+    # ==========================================
+    # MODEL TRAINING
+    # ==========================================
+
     model = XGBClassifier(
-        **best_params,
+        n_estimators=n_estimators,
+        max_depth=max_depth,
+        learning_rate=learning_rate,
         random_state=42,
         eval_metric="logloss"
     )
@@ -134,23 +79,61 @@ with mlflow.start_run():
         y_train
     )
 
-    accuracy = model.score(
-        X_test,
-        y_test
+    predictions = model.predict(
+        X_test
     )
 
-    print(
-        f"Best Parameters: {best_params}"
+    # ==========================================
+    # ACCURACY
+    # ==========================================
+
+    accuracy = accuracy_score(
+        y_test,
+        predictions
     )
 
-    for key, value in best_params.items():
-        mlflow.log_param(key, value)
+    print(f"Accuracy: {accuracy}")
 
-    print(
-        f"Accuracy: {accuracy}"
+    # ==========================================
+    # CONFUSION MATRIX
+    # ==========================================
+
+    cm = confusion_matrix(
+        y_test,
+        predictions
     )
 
-    mlflow.log_metric(
-        "final_accuracy",
-        accuracy
+    print(cm)
+
+    plt.figure(figsize=(6,4))
+
+    plt.imshow(cm)
+
+    plt.title(
+        "Confusion Matrix"
     )
+
+    plt.colorbar()
+
+    plt.savefig(
+        "modeling/autolog_baseline/confusion_matrix.png"
+    )
+
+    plt.close()
+
+    # ==========================================
+    # CLASSIFICATION REPORT
+    # ==========================================
+
+    report = classification_report(
+        y_test,
+        predictions
+    )
+
+    print(report)
+
+    with open(
+        "modeling/autolog_baseline/classification_report.txt",
+        "w"
+    ) as f:
+        f.write(report)
