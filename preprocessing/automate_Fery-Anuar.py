@@ -3,7 +3,7 @@ from sklearn.preprocessing import LabelEncoder
 
 # Load Data
 df = pd.read_csv(
-    "hotel-bookings_raw.csv"
+    "hotel-booking_raw.csv"
 )
 
 # Hapus Fitur
@@ -29,7 +29,7 @@ for col in df.select_dtypes(include='object'):
         df[col]
     )
 
-# Simpan Data Bersih
+# Simpan Data Hasil Preprocessing
 df.to_csv(
     "preprocessing/hotel-booking_preprocessing.csv",
     index=False
