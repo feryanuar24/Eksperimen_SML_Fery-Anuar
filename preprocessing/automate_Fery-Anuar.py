@@ -1,21 +1,26 @@
 import pandas as pd
 from sklearn.preprocessing import LabelEncoder
 
+# Load Data
 df = pd.read_csv(
-    "hotel_bookings_raw.csv"
+    "hotel-bookings_raw.csv"
 )
 
+# Hapus Fitur
 df.drop(
-    columns=["company","agent"],
+    columns=["company","agent", "reservation_status"],
     inplace=True
 )
 
+# Hapus Missing Value
 df.dropna(
     inplace=True
 )
 
+# Hapus Duplikat
 df.drop_duplicates(inplace=True)
 
+# Encoding Fitur Kategorikal
 for col in df.select_dtypes(include='object'):
 
     le = LabelEncoder()
@@ -24,8 +29,9 @@ for col in df.select_dtypes(include='object'):
         df[col]
     )
 
+# Simpan Data Bersih
 df.to_csv(
-    "preprocessing/hotel_bookings_preprocessing.csv",
+    "preprocessing/hotel-booking_preprocessing.csv",
     index=False
 )
 
